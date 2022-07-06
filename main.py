@@ -1,5 +1,6 @@
 import nextcord
 import os
+from keep_alive import keep_alive
 import random
 from nextcord.ext.commands import MissingPermissions
 from humanfriendly import InvalidTimespan
@@ -173,6 +174,9 @@ async def help(ctx):
 @commands.has_permissions(moderate_members=True)
 async def ban(ctx, member: nextcord.Member, *,     reason='None'):  
     if commands.has_permissions(administrator=True) or commands.has_permissions(moderate_members=True):
+        if member.guild_permissions.administrator or member.guild_permissions.moderator:
+            await ctx.send(f'You can\'t do that! That member is a moderator/ administrator!')
+            return
         embed = nextcord.Embed(title='Shield Bot', description=f'You have been banned from {ctx.guild} for reason: {reason}', color=0x3498db, timestamp=ctx.message.created_at)
         embed.set_footer(text=f"ID: {ctx.message.id}")
         channel = await member.create_dm()
@@ -187,6 +191,8 @@ async def ban(ctx, member: nextcord.Member, *,     reason='None'):
         embed = nextcord.Embed(title='Shield Bot', description='You dont have access to this command', color=0x3498db)
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
+
+#-------------------------------------------------
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -211,6 +217,8 @@ async def unban(ctx, *, member):
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
 
+#-------------------------------------------------
+
 @client.command()
 @commands.has_permissions(administrator=True)
 async def clear(ctx, amount=2):
@@ -221,6 +229,8 @@ async def clear(ctx, amount=2):
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
 
+#-------------------------------------------------
+
 @client.command()
 async def info(ctx):
     embed = nextcord.Embed(title='Shield Bot', description='Hi, im Shield Bot! For help with specific commands, please use the $help and $help associated commands.', color=0x3498db, timestamp=ctx.message.created_at)
@@ -228,11 +238,16 @@ async def info(ctx):
     channel = ctx.channel
     await channel.send(embed=embed)
 
+#-------------------------------------------------  
+
 @client.command()
 @commands.has_permissions(administrator=True)
 @commands.has_permissions(moderate_members=True)
 async def kick(ctx, member : nextcord.Member, *,   reason='None'):
     if commands.has_permissions(administrator=True) or commands.has_permissions(moderate_members=True):
+        if member.guild_permissions.administrator or member.guild_permissions.moderator:
+            await ctx.send(f'You can\'t do that! That member is a moderator/ administrator!')
+            return
         embed = nextcord.Embed(title='Shield Bot', description=f'You have been kicked from {ctx.guild} for reason: {reason}', color=0x3498db, timestamp=ctx.message.created_at)
         embed.set_footer(text=f"ID: {ctx.message.id}")
         channel = await member.create_dm()
@@ -248,6 +263,8 @@ async def kick(ctx, member : nextcord.Member, *,   reason='None'):
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
 
+#-------------------------------------------------
+
 @client.command()
 @commands.has_permissions(administrator=True)
 async def addrole(ctx, member : nextcord.Member, *, role : nextcord.Role):
@@ -262,6 +279,8 @@ async def addrole(ctx, member : nextcord.Member, *, role : nextcord.Role):
         embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
+
+#-------------------------------------------------
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -279,6 +298,8 @@ async def removerole(ctx, member : nextcord.Member, role : nextcord.Role):
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
 
+#-------------------------------------------------  
+
 @client.command()
 @commands.has_permissions(administrator=True)
 async def say(ctx, *, message=None):
@@ -290,11 +311,16 @@ async def say(ctx, *, message=None):
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
 
+#-------------------------------------------------
+
 @client.command()
 @commands.has_permissions(administrator=True)
 @commands.has_permissions(moderate_members=True)
 async def timeout(ctx, member: nextcord.Member=None, time=None, *, reason=None):
     if commands.has_permissions(administrator=True) or commands.has_permissions(moderate_members=True):
+        if member.guild_permissions.administrator or member.guild_permissions.moderator:
+            await ctx.send(f'You can\'t do that! That member is a moderator/ administrator!')
+            return
         time = humanfriendly.parse_timespan(time)
         embed = nextcord.Embed(title=None, description=f'You have been timed out in {ctx.guild} for {time} minutes | Reason: {reason}', color=0x3498db, timestamp=ctx.message.created_at)
         embed.set_footer(text=f"ID: {ctx.message.id}")
@@ -310,6 +336,8 @@ async def timeout(ctx, member: nextcord.Member=None, time=None, *, reason=None):
         embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
+
+#-------------------------------------------------
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -331,11 +359,16 @@ async def timein(ctx, member: nextcord.Member=None, time=None, *, reason=None):
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=3)
 
+#-------------------------------------------------
+
 @client.command(pass_context=True)
 @commands.has_permissions(administrator=True)
 async def changenick(ctx, member: nextcord.Member, *, nick):
 
     if commands.has_permissions(administrator=True):
+        if member.guild_permissions.administrator or member.guild_permissions.moderator:
+            await ctx.send(f'You can\'t do that! That member is a moderator/ administrator!')
+            return
         await member.edit(nick=nick)
         await ctx.channel.purge(limit=1)
         embed = nextcord.Embed(title='Shield Bot', description=f'Your nickname in {ctx.guild} was changed to \'{nick}\'', color=0x3498db, timestamp=ctx.message.created_at)
@@ -419,8 +452,8 @@ async def poll(ctx, question, *options: str):
 
 @client.command()
 async def whois(ctx, member: nextcord.Member = None):
-    if not member:
-        member = ctx.message.author
+    if not member:  # if member is no mentioned
+        member = ctx.message.author  # set member as the author
     roles = [role for role in member.roles]
     embed = nextcord.Embed(colour=0x3498db, timestamp=ctx.message.created_at,
                           title=f"User Info - {member}")
@@ -481,4 +514,6 @@ async def slowmode(ctx, seconds: int):
     else:
         return
 
-client.run('TOKEN')
+keep_alive()
+
+client.run(TOKEN)
