@@ -514,6 +514,4 @@ async def slowmode(ctx, seconds: int):
     else:
         return
 
-keep_alive()
-
 client.run(TOKEN)
