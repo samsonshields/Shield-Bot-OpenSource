@@ -1,6 +1,5 @@
 import nextcord
 import os
-from keep_alive import keep_alive
 import random
 from nextcord.ext.commands import MissingPermissions
 from humanfriendly import InvalidTimespan
@@ -40,12 +39,22 @@ def get_prefix(client, message):
     except nextcord.DiscordException:
         return "$"
 
-
-client = commands.Bot(command_prefix=get_prefix, activity = nextcord.Game(name='| $config'), intents = intents, help_command=None)
+client = commands.Bot(command_prefix=get_prefix, activity = nextcord.Game(name=f'| $help'), intents = intents, help_command=None)
     
 @client.event 
 async def on_ready():
     print('Shield Bot Dist is started and online') 
+
+@client.event
+async def on_message(message):
+    if client.user.mentioned_in(message):
+      with open('./prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+
+      prefix = prefixes[str(message.guild.id)]
+      embed = nextcord.Embed(description=f'Current server prefix is \'{prefix}\' \nFor more, use the \'{prefix}help\' command', color=0x3498db)
+      await message.channel.send(embed=embed)
+    await client.process_commands(message)
 
 
 @client.event
@@ -58,10 +67,10 @@ async def on_guild_join(guild):
     with open('./prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
 
-async def owner_find(ctx):
-    guild_owner = client.get_user(int(ctx.guild.owner.id))
-
-    embed = nextcord.Embed(title=f'Server: {ctx.guild}', description=f'Commands in this server start with the default prefix \'{get_prefix}\', however, this can be changed using the \'$prefix\' command\n To start the setup process for Shield Bot in your server, use the command \'$config\'', color=0x3498db)
+    guild_owner = client.get_user(int(guild.owner.id))
+    embed = nextcord.Embed(title=f'Thanks for choosing Shield Bot!', description=f'My default prefix is \'$\', however this can be changed by using the \'$prefix\' command', color=0x3498db)
+    embed.add_field(name="Commands List", value=f'[Our website](https://bit.ly/3y1pX9R)')
+    embed.add_field(name="Help/ Support", value=f'[Support Server](https://discord.gg/BYU5GqUVek)')
     channel = await guild_owner.create_dm()
     await channel.send(embed=embed)
 
@@ -79,51 +88,52 @@ async def on_guild_remove(guild):
 async def on_command_error(ctx, error):
     if isinstance(error, MissingPermissions):
         await ctx.channel.purge(limit=1)
-        emoji = '❌'
-        embed = nextcord.Embed(description=f'{emoji} | You don\'t have permission to do this', color=0xFC3400)
+        emoji = '<:ShieldError:996559560691155024>'
+        embed = nextcord.Embed(description=f'{emoji} You don\'t have permission to do this', color=0xFC3400)
         await ctx.channel.send(embed=embed, delete_after=5)
         return
     elif isinstance(error, CommandNotFound):
-        emoji = '❌'
-        embed = nextcord.Embed(description=f'This command does not exist', color=0xFC3400)
+        emoji = '<:ShieldError:996559560691155024>'
+        embed = nextcord.Embed(description=f'{emoji} This command does not exist', color=0xFC3400)
         await ctx.channel.send(embed=embed, delete_after=5)
         return
     elif isinstance(error, InvalidTimespan):
-        emoji = '❌'
+        emoji = '<:ShieldError:996559560691155024>'
         await ctx.channel.purge(limit=1)
-        embed = nextcord.Embed(description=f'{emoji} | You are missing required time argument', color=0xFC3400)
+        embed = nextcord.Embed(description=f'{emoji} You are missing required time argument', color=0xFC3400)
         await ctx.channel.send(embed=embed, delete_after=15)
         return
     elif isinstance(error, MissingRequiredArgument):
-        emoji = '❌'
+        emoji = '<:ShieldError:996559560691155024>'
         await ctx.channel.purge(limit=1)
-        embed = nextcord.Embed(description=f'{emoji} | You are missing a part of the command!', color=0xFC3400)
+        embed = nextcord.Embed(description=f'{emoji} You are missing a part of the command!', color=0xFC3400)
         await ctx.channel.send(embed=embed, delete_after=5)
         return
     elif isinstance(error, MissingRole):
-        emoji = '❌'
+        emoji = '<:ShieldError:996559560691155024>'
         await ctx.channel.purge(limit=1)
-        embed = nextcord.Embed(description=f'{emoji} | User does not have that role', color=0xFC3400)
+        embed = nextcord.Embed(description=f'{emoji} User does not have that role', color=0xFC3400)
         await ctx.channel.send(embed=embed, delete_after=10)
         return
     elif isinstance(error, BotMissingPermissions):
-        emoji = '❌'
+        emoji = '<:ShieldError:996559560691155024>'
         await ctx.channel.purge(limit=1)
-        embed = nextcord.Embed(description=f'{emoji} | I do not have the required permissions to run this command', color=0xFC3400)
+        embed = nextcord.Embed(description=f'{emoji} I do not have the required permissions to run this command', color=0xFC3400)
         await ctx.channel.send(embed=embed)
         return
     elif isinstance(error, MemberNotFound):
-        emoji = '❌'
+        emoji = '<:ShieldError:996559560691155024>'
         await ctx.channel.purge(limit=1)
-        embed = nextcord.Embed(description=f'{emoji} | Desired search query was not found', color=0xFC3400)
+        embed = nextcord.Embed(description=f'{emoji} Desired search query was not found', color=0xFC3400)
         await ctx.channel.send(embed=embed)
         return
     else:
-        emoji = '❌'
+        emoji = '<:ShieldError:996559560691155024>'
         await ctx.channel.purge(limit=1)
-        embed = nextcord.Embed(description=f'{emoji} | Error in command. Please try again', color=0xFC3400)
+        embed = nextcord.Embed(description=f'{emoji} Error in command. Please try again', color=0xFC3400)
         await ctx.channel.send(embed=embed, delete_after=10)
         print(error)
+
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -136,15 +146,11 @@ async def prefix(ctx, prefix):
     
         with open('./prefixes.json', 'w') as f:
             json.dump(prefixes, f, indent=4)
-    
-        embed = nextcord.Embed(title='Shield Bot', description=f'Prefix successfully changed to {prefix}', color=0x60C546, timestamp=ctx.message.created_at)
-        embed.set_footer(text=f"ID: {ctx.message.id}")
+        emoji = '<:ShieldError:996559560691155024>'
+        embed = nextcord.Embed(description=f'{emoji} Prefix successfully changed to {prefix}', color=0x60C546, timestamp=ctx.message.created_at)
         await ctx.channel.send(embed=embed)
     else:
-        await ctx.channel.purge(limit=1)
-        embed = nextcord.Embed(title='Shield Bot', description=f'You dont have access to this command', color=0x3498db)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
+        return
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -181,25 +187,21 @@ async def ban(ctx, member: nextcord.Member, *,     reason='None'):
         embed.set_footer(text=f"ID: {ctx.message.id}")
         channel = await member.create_dm()
         await channel.send(embed=embed)
-        emoji = '✅'
-        embed = nextcord.Embed(description=f'{emoji} | {member} has been banned for reason: {reason}', color=0x60C546, timestamp=ctx.message.created_at)
+        emoji = '<:ShieldCheck:996559064295284826>'
+        embed = nextcord.Embed(description=f'{emoji} {member} has been banned for reason: {reason}', color=0x60C546, timestamp=ctx.message.created_at)
         embed.set_footer(text=f"ID: {ctx.message.id}")
         await member.ban(reason=reason)
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed)
     else:
-        embed = nextcord.Embed(title='Shield Bot', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
-#-------------------------------------------------
+        return
 
 @client.command()
 @commands.has_permissions(administrator=True)
 @commands.has_permissions(moderate_members=True)
 async def unban(ctx, *, member):
-    emoji = '✅'
-    embed = nextcord.Embed(description=f'{emoji} | {member} has been unbanned', color=0x60C546, timestamp=ctx.message.created_at)
+    emoji = '<:ShieldCheck:996559064295284826>'
+    embed = nextcord.Embed(description=f'{emoji} {member} has been unbanned', color=0x60C546, timestamp=ctx.message.created_at)
     embed.set_footer(text=f"ID: {ctx.message.id}")
     banned_users = await ctx.guild.bans()
     member_name, member_discriminator = member.split('#')
@@ -213,11 +215,7 @@ async def unban(ctx, *, member):
             await ctx.channel.send(embed=embed, delete_after=5)
             return
     else:
-        embed = nextcord.Embed(title='Shield Bot', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
-#-------------------------------------------------
+        return
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -225,11 +223,7 @@ async def clear(ctx, amount=2):
     if commands.has_permissions(administrator=True):
         await ctx.channel.purge(limit=amount)
     else:
-        embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
-#-------------------------------------------------
+        return
 
 @client.command()
 async def info(ctx):
@@ -237,8 +231,6 @@ async def info(ctx):
     embed.set_footer(text=f"ID: {ctx.message.id}")
     channel = ctx.channel
     await channel.send(embed=embed)
-
-#-------------------------------------------------  
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -254,39 +246,31 @@ async def kick(ctx, member : nextcord.Member, *,   reason='None'):
         await channel.send(embed=embed)
         await member.kick(reason=reason)
         await ctx.channel.purge(limit=1)
-        emoji = '✅'
-        embed = nextcord.Embed(description=f'{emoji} | {member} has been kicked for reason: {reason}', color=0x60C546, timestamp=ctx.message.created_at)
+        emoji = '<:ShieldCheck:996559064295284826>'
+        embed = nextcord.Embed(description=f'{emoji} {member} has been kicked for reason: {reason}', color=0x60C546, timestamp=ctx.message.created_at)
         embed.set_footer(text=f"ID: {ctx.message.id}")
         await ctx.channel.send(embed=embed, delete_after=5)
     else:
-        embed = nextcord.Embed(title='Shield Bot', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
-#-------------------------------------------------
+        return
 
 @client.command()
 @commands.has_permissions(administrator=True)
 async def addrole(ctx, member : nextcord.Member, *, role : nextcord.Role):
-    emoji = '✅'
-    embed = nextcord.Embed(title='Shield Bot', description=f'{emoji} | {member} has been added to role: {role}', color=0x60C546, timestamp=ctx.message.created_at)
+    emoji = '<:ShieldCheck:996559064295284826>'
+    embed = nextcord.Embed(title='Shield Bot', description=f'{emoji} {member} has been added to role: {role}', color=0x60C546, timestamp=ctx.message.created_at)
     embed.set_footer(text=f"ID: {ctx.message.id}")
     if commands.has_permissions(administrator=True):
         await member.add_roles(role)
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=5)
     else:
-        embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
-#-------------------------------------------------
+        return
 
 @client.command()
 @commands.has_permissions(administrator=True)
 async def removerole(ctx, member : nextcord.Member, role : nextcord.Role):
-    emoji = '✅'
-    embed = nextcord.Embed(escription=f'{emoji} | {member} has been removed from role: {role}', color=0x60C546, timestamp=ctx.message.created_at)
+    emoji = '<:ShieldCheck:996559064295284826>'
+    embed = nextcord.Embed(escription=f'{emoji} {member} has been removed from role: {role}', color=0x60C546, timestamp=ctx.message.created_at)
     embed.set_footer(text=f"ID: {ctx.message.id}")
 
     if commands.has_permissions(administrator=True):
@@ -294,11 +278,7 @@ async def removerole(ctx, member : nextcord.Member, role : nextcord.Role):
         await ctx.channel.purge(limit=1)
         await ctx.channel.send(embed=embed, delete_after=5)
     else:
-        embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
-#-------------------------------------------------  
+        return
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -307,11 +287,7 @@ async def say(ctx, *, message=None):
         await ctx.channel.purge(limit=1)
         await ctx.send(message)
     else:
-        embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
-#-------------------------------------------------
+        return
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -328,15 +304,12 @@ async def timeout(ctx, member: nextcord.Member=None, time=None, *, reason=None):
         channel = await member.create_dm()
         await channel.send(embed=embed)
         await ctx.channel.purge(limit=1)
-        emoji = '✅'
-        embed = nextcord.Embed(description=f'{emoji} | {member} has been timed out for {time} minutes | Reason: {reason}', color=0x60C546, timestamp=ctx.message.created_at)
+        emoji = '<:ShieldCheck:996559064295284826>'
+        embed = nextcord.Embed(description=f'{emoji} {member} has been timed out for {time} minutes | Reason: {reason}', color=0x60C546, timestamp=ctx.message.created_at)
         embed.set_footer(text=f"ID: {ctx.message.id}")
         await ctx.channel.send(embed=embed)
     else:
-        embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
-
+        return
 #-------------------------------------------------
 
 @client.command()
@@ -350,14 +323,12 @@ async def timein(ctx, member: nextcord.Member=None, time=None, *, reason=None):
         channel = await member.create_dm()
         await channel.send(embed=embed)
         await ctx.channel.purge(limit=1)
-        emoji = '✅'
-        embed = nextcord.Embed(description=f'{emoji} | {member} has been removed from timeout | Reason: {reason}', color=0x60C546, timestamp=ctx.message.created_at)
+        emoji = '<:ShieldCheck:996559064295284826>'
+        embed = nextcord.Embed(description=f'{emoji} {member} has been removed from timeout | Reason: {reason}', color=0x60C546, timestamp=ctx.message.created_at)
         embed.set_footer(text=f"ID: {ctx.message.id}")
         await ctx.channel.send(embed=embed)
     else:
-        embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
+        return
 
 #-------------------------------------------------
 
@@ -381,10 +352,7 @@ async def changenick(ctx, member: nextcord.Member, *, nick):
         await ctx.channel.send(embed=embed)
     
     else:
-        embed = nextcord.Embed(title='Access Denied', description='You dont have access to this command', color=0x3498db)
-        
-        await ctx.channel.purge(limit=1)
-        await ctx.channel.send(embed=embed, delete_after=3)
+        return
 
 @client.command()
 async def randnum(ctx, min, max):
@@ -417,45 +385,48 @@ async def poll(ctx, question, *options: str):
     emoji2 = '2️⃣'
     emoji3 = '3️⃣'
 
+    user = ctx.author
+    color = user.top_role.color
+    
     if len(options) == 1:
-        embed = nextcord.Embed(title=f'{question}', description=f'1. {options}', color=0x3498db, timestamp=ctx.message.created_at)
-        embed.set_footer(text=f"ID: {ctx.message.id}")
+        embed = nextcord.Embed(title=f'{question}', description=f'{emoji1} {options}', color=color, timestamp=ctx.message.created_at)
+        embed.set_footer(text=f"Asked by: {ctx.author}")
         message = await ctx.channel.send(embed=embed) 
         await message.add_reaction(emoji1)
     
 
     elif len(options) == 2:
-        embed = nextcord.Embed(title=f'{question}', description=f'1. {options[0]}\n2. {options[1]}', color=0x3498db, timestamp=ctx.message.created_at)
-        embed.set_footer(text=f"ID: {ctx.message.id}")
+        embed = nextcord.Embed(title=f'{question}', description=f'{emoji1} {options[0]}\n{emoji2} {options[1]}', color=color, timestamp=ctx.message.created_at)
+        embed.set_footer(text=f"Asked by: {ctx.author}")
         message = await ctx.channel.send(embed=embed) 
         await message.add_reaction(emoji1)
         await message.add_reaction(emoji2)
 
     elif len(options) == 3:
-        embed = nextcord.Embed(title=f'{question}', description=f'1. {options[0]}\n2. {options[1]}\n3. {options[2]}', color=0x3498db, timestamp=ctx.message.created_at)
-        embed.set_footer(text=f"ID: {ctx.message.id}")
+        embed = nextcord.Embed(title=f'{question}', description=f'{emoji1} {options[0]}\n{emoji2} {options[1]}\n{emoji3} {options[2]}', color=color, timestamp=ctx.message.created_at)
+        embed.set_footer(text=f"Asked by: {ctx.author}")
         message = await ctx.channel.send(embed=embed) 
         await message.add_reaction(emoji1)
         await message.add_reaction(emoji2)
         await message.add_reaction(emoji3)
     elif len(options) > 3:
-      emoji_deny = '❌'
-      embed = nextcord.embed(description=f'{emoji_deny} | The maximum amount of options is 3', timestamp=ctx.message.created_at)
-      embed.set_footer(text=f"ID: {ctx.message.id}")
+      emoji_deny = '<:ShieldError:996559560691155024>'
+      embed = nextcord.Embed(description=f'{emoji_deny} The maximum amount of options is 3', color=0xFC3400)
       await ctx.channel.purge(limit=1)
       await ctx.channel.send(embed=embed)
     
     else:
-        denied = '❌'
-        embed = nextcord.Embed(description=f'{denied} | Error in command', color=0x3498db)
+        denied = '<:ShieldError:996559560691155024>'
+        embed = nextcord.Embed(description=f'{denied} You must have at least one option', color=0xFC3400)
         await ctx.channel.send(embed=embed) 
 
 @client.command()
 async def whois(ctx, member: nextcord.Member = None):
-    if not member:  # if member is no mentioned
+    color = member.top_role.color
+    if not member:  # if member is not mentioned
         member = ctx.message.author  # set member as the author
     roles = [role for role in member.roles]
-    embed = nextcord.Embed(colour=0x3498db, timestamp=ctx.message.created_at,
+    embed = nextcord.Embed(colour=color, timestamp=ctx.message.created_at,
                           title=f"User Info - {member}")
     embed.set_thumbnail(url=member.avatar)
     embed.set_footer(text=f"Requested by {ctx.author}")
@@ -484,14 +455,15 @@ async def banner(ctx, member: nextcord.Member = None):
             extension = '.gif'
         else:
             extension = '.png'
-        embed = nextcord.Embed(colour=0x3498db, timestamp=ctx.message.created_at, title=f'{member}\'s banner')
+        user = ctx.author
+        color = user.top_role.color
+        embed = nextcord.Embed(colour=color, timestamp=ctx.message.created_at, title=f'{member}\'s banner')
         embed.set_image(url=f"https://cdn.discordapp.com/banners/{member.id}/{banner_id}{extension}?size=1024")
         embed.set_footer(text=f'Requested by {ctx.author}')
-        embed.set_footer(text=f"ID: {ctx.message.id}")
         await ctx.send(embed=embed)
     else:
-        emoji = '❌'
-        embed = nextcord.Embed(colour=0x3498db, timestamp=ctx.message.created_at, description=f'{emoji} | {member} does not have an active banner!')
+        emoji = '<:ShieldError:996559560691155024>'
+        embed = nextcord.Embed(colour=0x3498db, timestamp=ctx.message.created_at, description=f'{emoji} {member} does not have an active banner!')
         embed.set_footer(text=f'Requested by {ctx.author}')
         embed.set_footer(text=f"ID: {ctx.message.id}")
         await ctx.send(embed=embed, delete_after=10)
@@ -503,15 +475,19 @@ async def slowmode(ctx, seconds: int):
     if commands.has_permissions(administrator=True):
         if not seconds:
             await ctx.channel.edit(slowmode_delay=0)
-            emoji = '✅'
-            embed = nextcord.Embed(description=f'{emoji} | Slowmode removed', color=0x3498db)
+            emoji = '<:ShieldCheck:996559064295284826>'
+            embed = nextcord.Embed(description=f'{emoji} Slowmode removed', color=0x60C546)
             await ctx.send(embed=embed)
+        elif seconds > 21600:
+          emoji = '<:ShieldError:996559560691155024>'
+          embed = nextcord.Embed(description=f'{emoji} Slowmode cannot exceed 21,600 seconds', color=0x60C546)
+          await ctx.send(embed=embed)
         else:
             await ctx.channel.edit(slowmode_delay=seconds)
-            emoji = '✅'
-            embed = nextcord.Embed(description=f'{emoji} | Slowmode set to {seconds} seconds', color=0x60C546)
+            emoji = '<:ShieldCheck:996559064295284826>'
+            embed = nextcord.Embed(description=f'{emoji} Slowmode set to {seconds} seconds', color=0x60C546)
             await ctx.send(embed=embed)
     else:
         return
 
-client.run(TOKEN)
+client.run(your token here)
